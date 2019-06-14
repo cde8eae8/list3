@@ -38,7 +38,7 @@ struct bitarray {
     }
 
     friend std::ostream& operator<<(std::ostream& out, bitarray const& a) {
-//        out << "[" << a.length * 8 + a.tail << "]" << bits::bits_to_string(a.data_, a.length * 8 + a.tail);
+        out << "[" << a.bit_length() << "]" << bits::bits_to_string(a.data(), a.bit_length());
         return out;
     }
 
@@ -62,7 +62,7 @@ struct bitarray {
     struct Data {
         size_t bit_size;
         size_t nRefs;
-        unsigned char data_[0];
+        unsigned char data_[];
     };
 
     void addLink() {
@@ -81,7 +81,7 @@ struct bitarray {
 
 
 struct bitreader {
-    bitreader(bitarray const& bits) : data_(bits), pos_(0), tail_pos_(0) {}
+    explicit bitreader(bitarray const& bits) : data_(bits), pos_(0), tail_pos_(0) {}
 
     unsigned char get() {
         unsigned char tmp = bits::get_bit(data_.data()[pos_], 7 - tail_pos_);
@@ -119,7 +119,6 @@ struct bitwriter {
      */
     bitarray reset();
 
-
     bitarray get();
 
  private:
@@ -128,6 +127,10 @@ struct bitwriter {
      */
     size_t tailShift(size_t tail) {
         return tail != 0;
+    }
+
+    void clear_end() {
+        bits::clear_low_bits(buffer_[pos_ - 1 + tailShift(tail_pos_)], tail_pos_);
     }
 
     size_t pos_;

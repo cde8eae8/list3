@@ -9,6 +9,9 @@
 
 
 namespace bits {
+    inline unsigned char highPart(unsigned char byte, size_t shift);
+    inline unsigned char lowPart(unsigned char byte, size_t shift);
+
     template<typename T>
     inline void set_bit(T &number, size_t bit) {
         assert(sizeof(T) * 8 > bit);
@@ -21,16 +24,33 @@ namespace bits {
         number &= ~(1U << bit);
     }
 
+    template<typename T>
+    inline void assign_bit(T &number, size_t value, size_t bit) {
+        assert(sizeof(T) * 8 > bit);
+        assert(value == 1 || value == 0);
+        if (value == 1)
+            set_bit(number, bit);
+        else
+            clear_bit(number, bit);
+    }
+
     inline size_t byte_size_to_bit(size_t length, size_t tail) {
         assert(tail < 8);
         return length * 8 + tail;
     }
 
-    inline void next_bit(size_t &pos, size_t &tail) {
+    inline void next_bit(size_t &pos, size_t &tail, size_t shift = 1) {
         assert(tail < 8);
-        tail++;
+        tail += shift;
         pos += tail / 8;
         tail = tail % 8;
+    }
+
+    template <typename T>
+    inline void clear_low_bits(T &number, size_t tail) {
+        assert(tail < sizeof(T) * 8);
+        T zero{0};
+        number &= tail ? highPart(~zero, tail) : ~zero;
     }
 
     inline size_t byte_to_length(size_t length, size_t tail) {

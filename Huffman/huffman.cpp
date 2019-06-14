@@ -105,8 +105,6 @@ namespace HuffmanTree {
             const size_t MAX_CODE_LENGTH = 8;
             unsigned char code[MAX_CODE_LENGTH]{};
             setCodes(data, node, code, 0, bw, used);
-            for (auto &item : data) {
-            }
             return bw.reset();
         }
 

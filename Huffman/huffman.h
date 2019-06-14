@@ -84,7 +84,6 @@ struct HuffmanCoder {
     std::vector<unsigned char> decode(std::vector<Code> codes, bitarray const& src) {
        bitreader br(src);
        bitwriter bw;
-       size_t pos = 0;
        std::vector<unsigned char> result;
        size_t i = 0;
        while(!br.eob()) {
