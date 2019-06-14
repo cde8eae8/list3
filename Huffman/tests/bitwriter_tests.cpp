@@ -85,9 +85,9 @@ namespace bits_generator {
            i += chunk_size;
         }
         auto res = bw.reset();
-        EXPECT_EQ(res.length, s.size() / 8);
-        EXPECT_EQ(res.tail, s.size() % 8);
-        EXPECT_TRUE(cmp_results(s, bits_to_string(res.data_, res.length * 8 + res.tail)));
+        EXPECT_EQ(res.length(), s.size() / 8);
+        EXPECT_EQ(res.tail(), s.size() % 8);
+        EXPECT_TRUE(cmp_results(s, bits_to_string(res.data(), res.bit_length())));
     }
 
     void test_bitreader() {
@@ -118,9 +118,9 @@ namespace bits_generator {
             bw.push_back(s[i] != '0');
         }
         auto res = bw.reset();
-        EXPECT_EQ(res.length, s.size() / 8);
-        EXPECT_EQ(res.tail, s.size() % 8);
-        EXPECT_TRUE(cmp_results(s, bits_to_string(res.data_, res.length * 8 + res.tail)));
+        EXPECT_EQ(res.length(), s.size() / 8);
+        EXPECT_EQ(res.tail(), s.size() % 8);
+        EXPECT_TRUE(cmp_results(s, bits_to_string(res.data(), res.bit_length())));
 
     }
 
@@ -148,7 +148,7 @@ TEST(bitIO, writeBits) {
 
     bw.write(test_data.data(), 4*8);
     auto result = bw.reset();
-    EXPECT_EQ(result.tail, 0);
+    EXPECT_EQ(result.tail(), 0);
 
 
     bw.write(&test_data[0], 4);
@@ -157,10 +157,10 @@ TEST(bitIO, writeBits) {
     bw.write(&test_data[1], 1);
     result = bw.reset();
     std::vector<unsigned char> expected = {0b10101111, 0b01000000};
-    EXPECT_EQ(result.tail, 2);
-    EXPECT_EQ(1, result.length);
+    EXPECT_EQ(result.tail(), 2);
+    EXPECT_EQ(1, result.length());
     for (size_t i = 0; i < expected.size(); ++i) {
-        EXPECT_EQ(expected[i], result.data_[i]);
+        EXPECT_EQ(expected[i], result.data()[i]);
     }
 
 

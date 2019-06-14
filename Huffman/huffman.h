@@ -18,8 +18,8 @@
 // TODO: encode(input_iterator it)?
 struct HuffmanData {
     HuffmanData() : tree(), used_chars(), n_used_chars(), code() {}
-    HuffmanData(bitarray const& tree_, char* used, size_t n_used, bitarray code_) :
-                           tree(tree_), used_chars(used), n_used_chars(n_used), code(code_) {}
+    HuffmanData(bitarray const& tree_, char* used, size_t n_used) :
+                           tree(tree_), used_chars(used), n_used_chars(n_used) {}
     bitarray tree;
     char* used_chars;
     size_t n_used_chars;
@@ -92,11 +92,11 @@ struct HuffmanCoder {
            auto cur_code = bw.get();
            i++;
            for (const auto &code : codes) {
-               if (code.code_bit_length != cur_code.length * 8 + cur_code.tail)
+               if (code.code_bit_length != cur_code.length() * 8 + cur_code.tail())
                    continue;
                bool flag = true;
-               for (size_t i = 0; i < bits::byte_to_length(cur_code.length, cur_code.tail); ++i) {
-                  if (code.code[i] != cur_code.data_[i]) {
+               for (size_t i = 0; i < bits::byte_to_length(cur_code.length(), cur_code.tail()); ++i) {
+                  if (code.code[i] != cur_code.data()[i]) {
                       flag = false;
                       break;
                   }

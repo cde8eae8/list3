@@ -200,17 +200,15 @@ std::pair<std::vector<Code>, HuffmanData> HuffmanCoder::getCodes(unsigned char c
         ++codes[data[i]].frequence;
     }
 
-    HuffmanData hd;
     if (length != 0) {
         std::vector<unsigned char> used;
         auto tree = HuffmanTree::buildTree(codes, used);
-        hd.tree = tree;
-        hd.used_chars = static_cast<char*>(operator new(used.size()));
-        std::copy(used.begin(), used.end(), hd.used_chars);
-        hd.n_used_chars = used.size();
-        return {codes, hd};
+        tree = tree;
+        char* used_chars = static_cast<char*>(operator new(used.size()));
+        std::copy(used.begin(), used.end(), used_chars);
+        return {codes, HuffmanData(tree, used_chars, used.size())};
     } else {
-        return {codes, hd};
+        return {codes, HuffmanData({}, {}, 0)};
     }
 }
 
