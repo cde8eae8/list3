@@ -10,10 +10,14 @@
 #include <queue>
 #include <assert.h>
 #include <algorithm>
-#include "code.h"
+#include <array>
 #include "bit_operations.h"
 #include "bitwriter.h"
 
+enum class DecodeState {
+    NOT_ENOUGH_MEMORY,
+    SUCCESS
+};
 
 // TODO: encode(input_iterator it)?
 struct HuffmanData {
@@ -65,53 +69,12 @@ struct HuffmanCoder {
     // TODO: bitwriter.clear()
     // TODO: unify names
     // TODO: HuffmanTree to class
-    HuffmanData encode(char const* data_, size_t length) {
-        unsigned char const *data = static_cast<unsigned char const*>(static_cast<void const*>(data_));
-        auto tmp = getCodes(data, length);
-        auto codes = tmp.first;
-        auto huffmanData = tmp.second;
-        bitwriter bw{};
-        for (size_t i = 0; i < length; ++i) {
-            bw.write(codes[data[i]].code.data(), codes[data[i]].code_bit_length);
-        }
-        huffmanData.code = bw.reset();
-        return huffmanData;
-    }
-
-
-    std::vector<unsigned char> decode(HuffmanData const& data, char* dest, size_t length);
-
-    std::vector<unsigned char> decode(std::vector<Code> codes, bitarray const& src) {
-       bitreader br(src);
-       bitwriter bw;
-       std::vector<unsigned char> result;
-       size_t i = 0;
-       while(!br.eob()) {
-           bw.push_back(br.get());
-           auto cur_code = bw.get();
-           i++;
-           for (const auto &code : codes) {
-               if (code.code_bit_length != cur_code.length() * 8 + cur_code.tail())
-                   continue;
-               bool flag = true;
-               for (size_t i = 0; i < bits::byte_to_length(cur_code.length(), cur_code.tail()); ++i) {
-                  if (code.code[i] != cur_code.data()[i]) {
-                      flag = false;
-                      break;
-                  }
-               }
-               if (!flag) continue;
-               result.push_back(code.ch);
-               bw.reset();
-               break;
-           }
-       }
-       return result;
-    }
+    // TODO: don't allocate dest in decode
+    HuffmanData encode(char const* data_, size_t length);
+    DecodeState decode(HuffmanData const &data, char* buffer, size_t& length);
 
  private:
     std::pair<std::vector<Code>, HuffmanData> getCodes(unsigned char const* buffer, size_t length);
-
 };
 
 

@@ -32,9 +32,9 @@ void bitwriter::write(unsigned char const *bytes, size_t bit_length) {
 
 bitarray bitwriter::reset() {
     if (pos_ == 0 && tail_pos_ == 0)
-        return {{}, 0, 0};
+        return {};
     clear_end();
-    bitarray barr(buffer_, pos_, tail_pos_);
+    bitarray barr(buffer_.begin(), pos_, tail_pos_);
     pos_ = tail_pos_ = 0;
     buffer_.clear();
     return barr;
@@ -43,7 +43,7 @@ bitarray bitwriter::reset() {
 #ifdef DEBUG
 bitarray bitwriter::get() {
     clear_end();
-    return {buffer_, pos_, tail_pos_};
+    return {buffer_.begin(), pos_, tail_pos_};
 }
 #endif
 

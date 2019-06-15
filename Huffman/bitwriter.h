@@ -6,17 +6,27 @@
 #define HUFFMAN_BITWRITER_H
 
 #include <vector>
+#include <algorithm>
 #include <assert.h>
 
 #include "bit_operations.h"
 
+
 struct bitarray {
-    bitarray() : bitarray({}, 0, 0) {}
-    bitarray(std::vector<unsigned char> data, size_t length, size_t tail) {
+    bitarray() : data_(nullptr) {}
+
+    template <typename InputIterator>
+    bitarray(InputIterator data, size_t bit_length) : bitarray(data, bit_length / 8, bit_length % 8){}
+
+    template <typename InputIterator>
+    bitarray(InputIterator data, size_t length, size_t tail) {
         size_t s = length + (tail != 0);
+        std::cout << "s = " << s << std::endl;
         data_ = static_cast<Data*>(operator new(sizeof(Data) + s * sizeof(unsigned char)));
         data_->bit_size = length * 8 + tail;
-        std::copy(data.begin(), data.begin() + s, data_->data_);
+        std::copy_n(data, s, data_->data_);
+        // skip last char of input
+        ++data;
         data_->nRefs = 1;
     }
 
@@ -42,34 +52,45 @@ struct bitarray {
         return out;
     }
 
-    unsigned char* data() const {
+    char* data() const {
+        if (!data_) return nullptr;
        return data_->data_;
     }
 
     size_t bit_length() const {
+        if (!data_) return 0;
         return data_->bit_size;
     }
 
     size_t length() const {
+        if (!data_) return 0;
         return data_->bit_size / 8;
     }
 
     size_t tail() const {
+        if (!data_) return 0;
         return data_->bit_size % 8;
+    }
+
+    size_t byte_length() {
+        if (!data_) return 0;
+       return bits::byte_to_length(length(), tail());
     }
 
  private:
     struct Data {
         size_t bit_size;
         size_t nRefs;
-        unsigned char data_[];
+        char data_[];
     };
 
     void addLink() {
+        if (!data_) return;
         ++data_->nRefs;
     }
 
     void deleteLink() {
+        if (!data_) return;
        --data_->nRefs;
        if(data_->nRefs == 0) {
            operator delete(data_);
@@ -77,6 +98,16 @@ struct bitarray {
     }
 
     Data *data_;
+};
+
+struct bytearray : private bitarray {
+    auto &operator[](size_t pos) {
+        return data()[pos];
+    }
+
+    size_t length() {
+        return byte_length();
+    }
 };
 
 

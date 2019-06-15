@@ -12,10 +12,10 @@ void test_encode(std::string test) {
     std::cout << "Test for " << (test.size() > 100 ? test.substr(0, 100) : test) << std::endl;
     HuffmanCoder hc;
     auto hd = hc.encode(test.data(), test.size());
-    char* buffer;
-    size_t length;
-    auto res = hc.decode(hd, buffer, length);
-    std::string result(res.begin(), res.end());
+    char* buffer = static_cast<char*>(operator new(test.size()));
+    size_t length = test.size();
+    hc.decode(hd, buffer, length);
+    std::string result(buffer, test.size());
     EXPECT_EQ(result, test);
 }
 

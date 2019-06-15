@@ -156,7 +156,7 @@ TEST(bitIO, writeBits) {
     bw.write(&test_data[0], 2);
     bw.write(&test_data[1], 1);
     result = bw.reset();
-    std::vector<unsigned char> expected = {0b10101111, 0b01000000};
+    std::vector<char> expected = {static_cast<char>(0b10101111), 0b01000000};
     EXPECT_EQ(result.tail(), 2);
     EXPECT_EQ(1, result.length());
     for (size_t i = 0; i < expected.size(); ++i) {

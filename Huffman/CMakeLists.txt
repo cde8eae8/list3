@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_DEBUG")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEBUG")
 
-add_executable(Huffman main.cpp huffman.cpp code.cpp bitwriter.cpp)
-add_executable(Test huffman.cpp code.cpp bitwriter.cpp tests/bitwriter_tests.cpp tests/huffman_test.cpp)
+add_executable(Huffman main.cpp huffman.cpp bitwriter.cpp)
+add_executable(Test huffman.cpp bitwriter.cpp tests/bitwriter_tests.cpp tests/huffman_test.cpp)
 
 target_link_libraries(Test gtest gtest_main)

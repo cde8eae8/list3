@@ -3,6 +3,7 @@
 //
 
 #include "huffman.h"
+#include <iterator>
 
 
 namespace HuffmanTree {
@@ -201,7 +202,7 @@ std::pair<std::vector<Code>, HuffmanData> HuffmanCoder::getCodes(unsigned char c
     if (length != 0) {
         std::vector<unsigned char> used;
         auto tree = HuffmanTree::buildTree(codes, used);
-        tree = tree;
+//        tree = tree;
         char* used_chars = static_cast<char*>(operator new(used.size()));
         std::copy(used.begin(), used.end(), used_chars);
         return {codes, HuffmanData(tree, used_chars, used.size())};
@@ -210,12 +211,13 @@ std::pair<std::vector<Code>, HuffmanData> HuffmanCoder::getCodes(unsigned char c
     }
 }
 
-std::vector<unsigned char> HuffmanCoder::decode(HuffmanData const &data, char *dest, size_t length) {
+DecodeState HuffmanCoder::decode(HuffmanData const &data, char* buffer, size_t& length) {
     std::vector<unsigned char> used_chars(data.used_chars, data.used_chars + data.n_used_chars);
     HuffmanTree::Node* root = HuffmanTree::restoreTree(data.tree, used_chars);
     HuffmanTree::Node* node = root;
     bitreader br(data.code);
-    std::vector<unsigned char> result;
+    size_t pos = 0;
+    DecodeState state = DecodeState::SUCCESS;
     while(!br.eob()) {
         if(br.get() == 1) {
             node = node->to1();
@@ -223,10 +225,29 @@ std::vector<unsigned char> HuffmanCoder::decode(HuffmanData const &data, char *d
             node = node->to0();
         }
         if (node->isLeaf()) {
-            result.push_back(node->c);
+            if (pos < length) {
+                buffer[pos++] = node->c;
+            } else {
+                ++length;
+                ++pos;
+                state = DecodeState::NOT_ENOUGH_MEMORY;
+            }
             node = root;
         }
     }
     delete root;
-    return result;
+    return DecodeState::SUCCESS;
+}
+
+HuffmanData HuffmanCoder::encode(char const *data_, size_t length) {
+    auto *data = static_cast<unsigned char const*>(static_cast<void const*>(data_));
+    auto tmp = getCodes(data, length);
+    auto codes = tmp.first;
+    auto huffmanData = tmp.second;
+    bitwriter bw{};
+    for (size_t i = 0; i < length; ++i) {
+        bw.write(codes[data[i]].code.data(), codes[data[i]].code_bit_length);
+    }
+    huffmanData.code = bw.reset();
+    return huffmanData;
 }

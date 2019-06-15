@@ -68,7 +68,9 @@ namespace bits {
         return (number & (1U << pos)) >> pos;
     }
 
-    inline std::string bits_to_string(unsigned char const *bytes, size_t length_in_bits) {
+    template <typename T>
+    inline std::string bits_to_string(T const *bytes, size_t length_in_bits) {
+        static_assert(sizeof(T) == 1);
         std::string result;
         for (size_t i = 0; i < length_in_bits / 8; ++i) {
             for (size_t j = 0; j < 8; ++j) {
