@@ -165,14 +165,12 @@ namespace HuffmanTree {
         if (br.get() == DOWN) {
             restoreTree(root, node->create1(), br, pos, used_chars);
         } else {
-            std::cout << "error: only one child" << std::endl;
-            //throw std::runtime_error("tree is corrupted");
+            throw std::runtime_error("tree is corrupted");
         }
         if (br.get() == UP) {
             return;
         } else {
-            std::cout << "error: too many children" << std::endl;
-            //throw std::runtime_error("tree is corrupted");
+            throw std::runtime_error("tree is corrupted");
         }
     }
 
@@ -202,22 +200,26 @@ std::pair<std::vector<Code>, HuffmanData> HuffmanCoder::getCodes(unsigned char c
     if (length != 0) {
         std::vector<unsigned char> used;
         auto tree = HuffmanTree::buildTree(codes, used);
-//        tree = tree;
-        char* used_chars = static_cast<char*>(operator new(used.size()));
-        std::copy(used.begin(), used.end(), used_chars);
-        return {codes, HuffmanData(tree, used_chars, used.size())};
+        bytearray used_chars(used.data(), used.size());
+        return {codes, HuffmanData(tree, used_chars)};
     } else {
-        return {codes, HuffmanData({}, {}, 0)};
+        return {codes, HuffmanData({}, {})};
     }
 }
 
 DecodeState HuffmanCoder::decode(HuffmanData const &data, char* buffer, size_t& length) {
-    std::vector<unsigned char> used_chars(data.used_chars, data.used_chars + data.n_used_chars);
-    HuffmanTree::Node* root = HuffmanTree::restoreTree(data.tree, used_chars);
+    DecodeState state = DecodeState::SUCCESS;
+    std::vector<unsigned char> used_chars(data.used_chars.array(), data.used_chars.array() + data.used_chars.length());
+    HuffmanTree::Node *root;
+    try {
+        root = HuffmanTree::restoreTree(data.tree, used_chars);
+    } catch (std::runtime_error& e) {
+        state = DecodeState::FAIL;
+        return state;
+    }
     HuffmanTree::Node* node = root;
     bitreader br(data.code);
     size_t pos = 0;
-    DecodeState state = DecodeState::SUCCESS;
     while(!br.eob()) {
         if(br.get() == 1) {
             node = node->to1();
@@ -236,7 +238,8 @@ DecodeState HuffmanCoder::decode(HuffmanData const &data, char* buffer, size_t& 
         }
     }
     delete root;
-    return DecodeState::SUCCESS;
+    if (state == DecodeState::SUCCESS) length = pos;
+    return state;
 }
 
 HuffmanData HuffmanCoder::encode(char const *data_, size_t length) {

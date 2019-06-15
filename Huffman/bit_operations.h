@@ -74,7 +74,7 @@ namespace bits {
         std::string result;
         for (size_t i = 0; i < length_in_bits / 8; ++i) {
             for (size_t j = 0; j < 8; ++j) {
-                unsigned char bit = get_bit(bytes[i], 7 - j); // bytes[i] & (1 << (7 - j))) >> (7 - j);
+                unsigned char bit = get_bit(bytes[i], 7 - j);
                 result.push_back(static_cast<char>(bit + '0'));
             }
         }

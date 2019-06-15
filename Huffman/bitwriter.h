@@ -21,8 +21,10 @@ struct bitarray {
     template <typename InputIterator>
     bitarray(InputIterator data, size_t length, size_t tail) {
         size_t s = length + (tail != 0);
-        std::cout << "s = " << s << std::endl;
-        data_ = static_cast<Data*>(operator new(sizeof(Data) + s * sizeof(unsigned char)));
+//        std::cout << "s = " << s << std::endl;
+//        data_ = static_cast<Data*>(operator new(sizeof(Data) + s * sizeof(unsigned char)));
+        data_ = static_cast<Data*>(operator new(sizeof(Data)));
+        data_->data_ = static_cast<char*>(operator new(s * sizeof(unsigned char)));
         data_->bit_size = length * 8 + tail;
         std::copy_n(data, s, data_->data_);
         // skip last char of input
@@ -72,7 +74,7 @@ struct bitarray {
         return data_->bit_size % 8;
     }
 
-    size_t byte_length() {
+    size_t byte_length() const {
         if (!data_) return 0;
        return bits::byte_to_length(length(), tail());
     }
@@ -81,7 +83,7 @@ struct bitarray {
     struct Data {
         size_t bit_size;
         size_t nRefs;
-        char data_[];
+        char* data_;
     };
 
     void addLink() {
@@ -101,11 +103,25 @@ struct bitarray {
 };
 
 struct bytearray : private bitarray {
+    bytearray() : bitarray() {}
+
+    template <typename T>
+    bytearray(T* data, size_t size) : bitarray(data, size * 8) {}
+
+
+    char const *array() const {
+        return data();
+    }
+
     auto &operator[](size_t pos) {
         return data()[pos];
     }
 
-    size_t length() {
+    auto const &operator[](size_t pos) const {
+        return data()[pos];
+    }
+
+    size_t length() const {
         return byte_length();
     }
 };

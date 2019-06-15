@@ -25,47 +25,15 @@ void encode(std::string input_file, std::string output_file) {
    while (in) {
        in.read(buffer, BLOCK_SIZE);
        HuffmanCoder hc;
+       if (in.gcount() == 0)
+           return;
        HuffmanData hd = hc.encode(buffer, in.gcount());
-
-       ///
        write_size_t(out, hd.tree.bit_length());
-
-       std::cout << "block\n" <<
-                        "tree\t" << hd.tree << std::endl;
-       for (size_t i = 0; i < hd.n_used_chars; ++i) {
-           std::cout << hd.used_chars[i] << " ";
-       }
-       std::cout << std::endl;
-       std::cout << "code\t" << hd.code << std::endl;
-
-
-       std::cout << "written " << sizeof(hd.tree.bit_length()) << std::endl;
-
-       ///
        out.write(hd.tree.data(), hd.tree.byte_length());
-
-       std::cout << "written " << hd.tree.byte_length() << std::endl;
-
-       std::cout << "pos" << out.tellp() << std::endl;
-       ///
-       write_size_t(out, hd.n_used_chars);
-
-       std::cout << hd.n_used_chars << std::endl;
-       std::cout << "written " << sizeof(hd.n_used_chars) << std::endl;
-
-       ///
-       out.write(hd.used_chars, hd.n_used_chars);
-
-       std::cout << "written " << hd.n_used_chars << std::endl;
-
-       ///
+       write_size_t(out, hd.used_chars.length());
+       out.write(hd.used_chars.array(), hd.used_chars.length());
        write_size_t(out, hd.code.bit_length());
-
-       std::cout << "written " << sizeof(hd.tree.bit_length()) << std::endl;
-      ///
        out.write(hd.code.data(), hd.code.byte_length());
-
-       std::cout << "written " << hd.code.byte_length() << std::endl;
    }
    in.close();
    out.close();
@@ -74,9 +42,38 @@ void encode(std::string input_file, std::string output_file) {
 size_t read_size_t(std::istream& in) {
     size_t value;
     char* ptr = static_cast<char*>(static_cast<void*>(&value));
-    in.read(ptr, sizeof(value));
+    if (!in.read(ptr, sizeof(value))) {
+        return 0;
+    }
     return value;
 }
+
+
+struct buffer {
+    buffer(size_t size, std::istream& in) {
+        if (in.eof()) {
+            data_ = nullptr;
+            return;
+        }
+        data_ = static_cast<char*>(operator new(size));
+        in.read(data_, size);
+    }
+
+    buffer(size_t size) {
+        data_ = static_cast<char*>(operator new(size));
+    }
+
+    ~buffer() {
+        operator delete(data_);
+    }
+
+    char* data() {
+        return data_;
+    }
+
+ private:
+    char* data_;
+};
 
 
 void decode(std::string input_file, std::string output_file) {
@@ -88,50 +85,30 @@ void decode(std::string input_file, std::string output_file) {
     while (in) {
         size_t tree_length;
         tree_length = read_size_t(in);
-        ///
-        bitarray tree(std::istreambuf_iterator<char>(in), tree_length / 8, tree_length % 8);
-
-        std::cout << tree << std::endl;
-
+        buffer b(tree_length / 8 + (tree_length % 8 != 0), in);
+        bitarray tree(b.data(), tree_length / 8, tree_length % 8);
         size_t n_used_chars;
-        std::cout << "pos" <<in.tellg() << std::endl;
-        ///
         n_used_chars = read_size_t(in);
-        std::cout << n_used_chars << std::endl;
-        char *chars = static_cast<char *>(operator new(n_used_chars));
-        ///
-        in.read(chars, n_used_chars);
+        buffer chars(n_used_chars);
+        in.read(chars.data(), n_used_chars);
 
-        HuffmanData hd(tree, chars, n_used_chars);
+        HuffmanData hd(tree, bytearray(chars.data(), n_used_chars));
 
-        std::cout << "block\n" <<
-                  "tree len \t" << tree_length << "\n"
-                  "tree\t" << hd.tree << std::endl;
-        for (size_t i = 0; i < hd.n_used_chars; ++i) {
-            std::cout << hd.used_chars[i] << " ";
-        }
-        std::cout << std::endl;
         size_t code_length;
-        ///
-//        in >> code_length;
         code_length = read_size_t(in);
 
-        std::cout << code_length << std::endl;
-        bitarray code(std::istreambuf_iterator<char>(in), code_length);
+        buffer b2(code_length / 8 + (code_length % 8 != 0), in);
+        bitarray code(b2.data(), code_length / 8, code_length % 8);
         hd.code = code;
-
-        std::cout << "code\t" << hd.code << std::endl;
-
 
         char* buffer = static_cast<char *>(operator new(BLOCK_SIZE));
         size_t length = BLOCK_SIZE;
         if (hc.decode(hd, buffer, length) != DecodeState::SUCCESS) {
-           std::cout << "Some errors" << std::endl;
+           std::cout << "error: file is corrupted" << std::endl;
            return;
         }
         out.write(buffer, length);
         operator delete(buffer);
-        break;
     }
 
     out.close();

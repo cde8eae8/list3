@@ -16,17 +16,17 @@
 
 enum class DecodeState {
     NOT_ENOUGH_MEMORY,
-    SUCCESS
+    SUCCESS,
+    FAIL
 };
 
 // TODO: encode(input_iterator it)?
 struct HuffmanData {
-    HuffmanData() : tree(), used_chars(), n_used_chars(), code() {}
-    HuffmanData(bitarray const& tree_, char* used, size_t n_used) :
-                           tree(tree_), used_chars(used), n_used_chars(n_used) {}
+    HuffmanData() : tree(), used_chars(), code() {}
+    HuffmanData(bitarray const& tree_, bytearray used) :
+                           tree(tree_), used_chars(used) {}
     bitarray tree;
-    char* used_chars;
-    size_t n_used_chars;
+    bytearray used_chars;
     bitarray code;
 };
 
