@@ -4,130 +4,121 @@
 
 #include "huffman.h"
 #include <iterator>
+#include <memory>
 
 
 namespace HuffmanTree {
-    namespace {
-        struct Node {
-            Node() : c(0), frequence(0), left(nullptr), right(nullptr) {}
-            Node(Node *l, Node *r) : c(0), frequence(l->frequence + r->frequence),
-                                     left(l), right(r) {}
-            Node(unsigned char ch, size_t freq) : c(ch), frequence(freq),
-                                                  left(nullptr), right(nullptr) {}
+    struct Node {
+        Node() : c(0), frequence(0), left(nullptr), right(nullptr) {}
+        Node(Node *l, Node *r) : c(0), frequence(l->frequence + r->frequence),
+                                 left(l), right(r) {}
+        Node(unsigned char ch, size_t freq) : c(ch), frequence(freq),
+                                              left(nullptr), right(nullptr) {}
 
-            ~Node() {
-                if (!isLeaf()) {
-                    delete left;
-                    delete right;
-                }
+        ~Node() {
+            if (!isLeaf()) {
+                delete left;
+                delete right;
             }
+        }
 
-            Node* to0() {
-                return left;
-            }
+        Node* to0() { return left; }
+        Node* to1() { return right; }
 
-            Node* to1() {
-                return right;
-            }
+        Node* create0() {
+            left = new Node;
+            return left;
+        }
 
-            Node* create0() {
-                left = new Node;
-                return left;
-            }
+        Node* create1() {
+            right = new Node;
+            return right;
+        }
 
-            Node* create1() {
-                right = new Node;
-                return right;
-            }
+        bool isLeaf() {
+            return left == right && left;
+        }
 
-            // TODO: change it
-            bool isLeaf() {
-                return left == right && left;
-            }
-
-            void print(size_t level = 0) {
-                if(level > 10)
-                    return;
-                if (!isLeaf() && left)
-                    left->print(level + 1);
-                else {
-                    std::cout << "->";
-                    for (size_t i = 0; i < level; ++i) {
-                        std::cout << "\t";
-                    }
-                    std::cout << "l " << left << std::endl;
-                }
+        void print(size_t level = 0) {
+            if(level > 10)
+                return;
+            if (!isLeaf() && left)
+                left->print(level + 1);
+            else {
                 std::cout << "->";
                 for (size_t i = 0; i < level; ++i) {
-                   std::cout << "\t";
+                    std::cout << "\t";
                 }
-                std::cout << frequence << "(" << c << ")" << std::endl;
-                if (!isLeaf() && right)
-                    right->print(level + 1);
-                else {
-                    std::cout << "->";
-                    for (size_t i = 0; i < level; ++i) {
-                        std::cout << "\t";
-                    }
-                    std::cout << "r " << right << std::endl;
+                std::cout << "l " << left << std::endl;
+            }
+            std::cout << "->";
+            for (size_t i = 0; i < level; ++i) {
+               std::cout << "\t";
+            }
+            std::cout << frequence << "(" << c << ")" << std::endl;
+            if (!isLeaf() && right)
+                right->print(level + 1);
+            else {
+                std::cout << "->";
+                for (size_t i = 0; i < level; ++i) {
+                    std::cout << "\t";
                 }
+                std::cout << "r " << right << std::endl;
             }
-            unsigned char c;
-            size_t frequence;
-            Node *left, *right;
-            friend bool operator<(Node const& lhs, Node const& rhs) {
-                return lhs.frequence < rhs.frequence;
-            }
-        };
+        }
 
-        struct NodeComparator {
-            bool operator()(Node const *lhs, Node const *rhs) {
-                return lhs->frequence > rhs->frequence;
-            }
-        };
+        unsigned char c;
+        size_t frequence;
+        Node *left, *right;
+    };
 
-        const unsigned char UP = 0;
-        const unsigned char DOWN = 1;
+    struct NodeComparator {
+        bool operator()(Node const *lhs, Node const *rhs) {
+            return lhs->frequence > rhs->frequence;
+        }
+    };
 
-        void setCodes(std::vector<Code>& data, Node *node, unsigned char* currentCode,
-                size_t bit_length, bitwriter& tree_writer, std::vector<unsigned char>& used);
+    const unsigned char UP = 0;
+    const unsigned char DOWN = 1;
 
-        bitarray setCodes(std::vector<Code>& data, Node *node, std::vector<unsigned char>& used) {
-            assert(node);
-            bitwriter bw;
-            if (!node->left && !node->right) {
-                bits::set_bit(data[node->c].code[0], 7);
-                data[node->c].code_bit_length = 1;
-                bw.push_back(DOWN);
-                bw.push_back(UP);
-                used.push_back(node->c);
-                return bw.reset();
-            }
-            const size_t MAX_CODE_LENGTH = 8;
-            unsigned char code[MAX_CODE_LENGTH]{};
-            setCodes(data, node, code, 0, bw, used);
+    void setCodes(std::vector<Code>& data, Node *node, unsigned char* currentCode,
+            size_t bit_length, bitwriter& tree_writer, std::vector<unsigned char>& used);
+
+    bitarray setCodes(std::vector<Code>& data, Node *node, std::vector<unsigned char>& used) {
+        assert(node);
+        bitwriter bw;
+        if (!node->left && !node->right) {
+            bits::set_bit(data[node->c].code[0], 7);
+            data[node->c].code_bit_length = 1;
+            bw.push_back(DOWN);
+            bw.push_back(UP);
+            used.push_back(node->c);
             return bw.reset();
         }
+        const size_t MAX_CODE_LENGTH = 8;
+        unsigned char code[MAX_CODE_LENGTH]{};
+        setCodes(data, node, code, 0, bw, used);
+        return bw.reset();
+    }
 
-        void setCodes(std::vector<Code>& data, Node *node, unsigned char* currentCode,
-                size_t bit_length, bitwriter& tree_writer, std::vector<unsigned char>& used) {
-            assert(node);
-            assert((!node->right && !node->left) || (node->right && node->left && node->right != node->left));
-            assert(currentCode);
-            tree_writer.push_back(DOWN);
+    void setCodes(std::vector<Code>& data, Node *node, unsigned char* currentCode,
+            size_t bit_length, bitwriter& tree_writer, std::vector<unsigned char>& used) {
+        assert(node);
+        assert((!node->right && !node->left) || (node->right && node->left && node->right != node->left));
+        assert(currentCode);
+        tree_writer.push_back(DOWN);
 
-            if (node->right && node->left) {
-                bits::clear_bit(currentCode[bit_length / 8], 7 - bit_length % 8);
-                setCodes(data, node->to0(), currentCode, bit_length + 1, tree_writer, used);
-                bits::set_bit(currentCode[bit_length / 8], 7 - bit_length % 8);
-                setCodes(data, node->to1(), currentCode, bit_length + 1, tree_writer, used);
-            } else {
-                std::copy(currentCode, currentCode + bits::bit_size_to_byte(bit_length), data[node->c].code.begin());
-                data[node->c].code_bit_length = bit_length;
-                used.push_back(node->c);
-            }
-            tree_writer.push_back(UP);
+        if (node->right && node->left) {
+            bits::clear_bit(currentCode[bit_length / 8], 7 - bit_length % 8);
+            setCodes(data, node->to0(), currentCode, bit_length + 1, tree_writer, used);
+            bits::set_bit(currentCode[bit_length / 8], 7 - bit_length % 8);
+            setCodes(data, node->to1(), currentCode, bit_length + 1, tree_writer, used);
+        } else {
+            std::copy(currentCode, currentCode + bits::bit_size_to_byte(bit_length), data[node->c].code.begin());
+            data[node->c].code_bit_length = bit_length;
+            used.push_back(node->c);
         }
+        tree_writer.push_back(UP);
     }
 
     bitarray buildTree(std::vector<Code>& data, std::vector<unsigned char>& used) {
@@ -210,14 +201,14 @@ std::pair<std::vector<Code>, HuffmanData> HuffmanCoder::getCodes(unsigned char c
 DecodeState HuffmanCoder::decode(HuffmanData const &data, char* buffer, size_t& length) {
     DecodeState state = DecodeState::SUCCESS;
     std::vector<unsigned char> used_chars(data.used_chars.array(), data.used_chars.array() + data.used_chars.length());
-    HuffmanTree::Node *root;
+    std::shared_ptr<HuffmanTree::Node> root;
     try {
-        root = HuffmanTree::restoreTree(data.tree, used_chars);
+        root = std::shared_ptr<HuffmanTree::Node>(HuffmanTree::restoreTree(data.tree, used_chars));
     } catch (std::runtime_error& e) {
         state = DecodeState::FAIL;
         return state;
     }
-    HuffmanTree::Node* node = root;
+    HuffmanTree::Node* node = root.get();
     bitreader br(data.code);
     size_t pos = 0;
     while(!br.eob()) {
@@ -234,10 +225,9 @@ DecodeState HuffmanCoder::decode(HuffmanData const &data, char* buffer, size_t& 
                 ++pos;
                 state = DecodeState::NOT_ENOUGH_MEMORY;
             }
-            node = root;
+            node = root.get();
         }
     }
-    delete root;
     if (state == DecodeState::SUCCESS) length = pos;
     return state;
 }
