@@ -5,6 +5,7 @@
 #include "huffman.h"
 
 const size_t BLOCK_SIZE = 4096;
+const size_t MAX_TREE_SIZE = 256 * 2 / 8;
 
 
 void printUsage(char* program_name) {
@@ -85,10 +86,20 @@ void decode(std::string input_file, std::string output_file) {
     while (in) {
         size_t tree_length;
         tree_length = read_size_t(in);
+        if (tree_length > MAX_TREE_SIZE) {
+            std::cout << "error: file is corrupted" << std::endl;
+//            continue;
+            return;
+        }
         buffer b(tree_length / 8 + (tree_length % 8 != 0), in);
         bitarray tree(b.data(), tree_length / 8, tree_length % 8);
         size_t n_used_chars;
         n_used_chars = read_size_t(in);
+        if (n_used_chars > 256) {
+            std::cout << "error: file is corrupted" << std::endl;
+//            continue;
+            return;
+        }
         buffer chars(n_used_chars);
         in.read(chars.data(), n_used_chars);
 
@@ -96,6 +107,11 @@ void decode(std::string input_file, std::string output_file) {
 
         size_t code_length;
         code_length = read_size_t(in);
+        if (code_length > BLOCK_SIZE) {
+            std::cout << "error: file is corrupted" << std::endl;
+//            continue;
+            return;
+        }
 
         buffer b2(code_length / 8 + (code_length % 8 != 0), in);
         bitarray code(b2.data(), code_length / 8, code_length % 8);
